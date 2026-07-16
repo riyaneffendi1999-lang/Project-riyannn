@@ -196,6 +196,8 @@ function LuckySpinView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [deleting, setDeleting] = useState<BonusTask | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [page, setPage] = useState(1);
 
   // Pending tickets from DB (visible to all admins via realtime)
@@ -259,6 +261,14 @@ function LuckySpinView() {
     });
     setEditSaving(false);
     setEditingId(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleting) return;
+    setDeleteLoading(true);
+    await remove(deleting.id);
+    setDeleteLoading(false);
+    setDeleting(null);
   };
 
   const { from, to } = useMemo(() => getPeriodRange(period), [period]);
@@ -395,6 +405,7 @@ function LuckySpinView() {
                   <th className={thCls}>Tiket</th>
                   <th className={thCls}>Inject Bonus</th>
                   <th className={thCls}>Status</th>
+                  <th className={thCls}>Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
@@ -439,17 +450,27 @@ function LuckySpinView() {
                           </p>
                         )}
                       </td>
+                      <td className={tdCls}>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEdit(t)} disabled={isEditing} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 disabled:opacity-40 transition-colors" title="Edit bonus"><Pencil size={12} /></button>
+                          <button onClick={() => setDeleting(t)} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Hapus data"><Trash2 size={12} /></button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
                 {completed.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400 dark:text-slate-600 text-xs">Belum ada data complete untuk periode ini</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 dark:text-slate-600 text-xs">Belum ada data complete untuk periode ini</td></tr>
                 )}
               </tbody>
             </table>
           </div>
           <BonusPagination total={completed.length} page={currentPage} onPage={setPage} />
           </>
+        )}
+
+        {deleting && (
+          <ConfirmDialog message={`Hapus data bonus "${deleting.user_name}"?`} loading={deleteLoading} onConfirm={handleDelete} onClose={() => setDeleting(null)} />
         )}
       </div>
     </div>
