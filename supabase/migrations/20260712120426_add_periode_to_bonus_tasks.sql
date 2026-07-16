@@ -1,0 +1,2 @@
+ALTER TABLE bonus_tasks ADD COLUMN IF NOT EXISTS periode VARCHAR(7) DEFAULT NULL;
+COMMENT ON COLUMN bonus_tasks.periode IS 'Format: YYYY-MM, e.g. 2026-07';
