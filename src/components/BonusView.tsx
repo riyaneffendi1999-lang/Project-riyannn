@@ -405,7 +405,6 @@ function LuckySpinView() {
                   <th className={thCls}>Tiket</th>
                   <th className={thCls}>Inject Bonus</th>
                   <th className={thCls}>Status</th>
-                  <th className={thCls}>Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
@@ -439,28 +438,28 @@ function LuckySpinView() {
                         )}
                       </td>
                       <td className={tdCls}>
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                          <CheckCircle2 size={11} />Complete
-                        </span>
-                      </td>
-                      <td className={tdCls}>
-                        {t.edited_at && (
-                          <p className="text-[10px] text-slate-400 dark:text-slate-600 whitespace-nowrap">
-                            Edit: {new Date(t.edited_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} oleh {t.edited_by}
-                          </p>
-                        )}
-                      </td>
-                      <td className={tdCls}>
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => startEdit(t)} disabled={isEditing} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 disabled:opacity-40 transition-colors" title="Edit bonus"><Pencil size={12} /></button>
-                          <button onClick={() => setDeleting(t)} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Hapus data"><Trash2 size={12} /></button>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                              <CheckCircle2 size={11} />Complete
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => startEdit(t)} disabled={isEditing} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 disabled:opacity-40 transition-colors" title="Edit bonus"><Pencil size={12} /></button>
+                              <button onClick={() => setDeleting(t)} className="p-1 rounded text-slate-400 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Hapus data"><Trash2 size={12} /></button>
+                            </div>
+                          </div>
+                          {t.edited_at && (
+                            <p className="text-[10px] text-slate-400 dark:text-slate-600 whitespace-nowrap">
+                              Edit: {new Date(t.edited_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} oleh {t.edited_by}
+                            </p>
+                          )}
                         </div>
                       </td>
                     </tr>
                   );
                 })}
                 {completed.length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400 dark:text-slate-600 text-xs">Belum ada data complete untuk periode ini</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400 dark:text-slate-600 text-xs">Belum ada data complete untuk periode ini</td></tr>
                 )}
               </tbody>
             </table>
