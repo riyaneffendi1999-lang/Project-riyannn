@@ -152,7 +152,6 @@ const PendingRow = memo(function PendingRow({ task, onCommit, onComplete, onRemo
           }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              if (userName !== task.user_name) onCommit(task.id, 'user_name', userName);
               const parsed = parseFloat(bonusText.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
               onComplete({ ...task, user_name: userName, inject_bonus: parsed });
             }
@@ -232,16 +231,16 @@ function LuckySpinView() {
 
   const removePendingRow = (id: string) => remove(id);
 
-  // When Enter is pressed on inject_bonus field: mark as complete
+  // When Enter is pressed on inject_bonus field: save username + bonus + mark complete in one atomic update
   const handleBonusEnter = async (task: BonusTask) => {
     if (!task.user_name.trim()) return;
     const amount = task.inject_bonus > 0 ? task.inject_bonus : 0;
     const status: BonusTask['status'] = amount > 0 ? 'complete' : 'pending';
     await update(task.id, {
+      user_name: task.user_name.trim(),
       inject_bonus: amount,
       status,
-      edited_at: new Date().toISOString(),
-      edited_by: user?.email ?? 'admin',
+      completed_at: status === 'complete' ? new Date().toISOString() : null,
     });
   };
 
@@ -253,9 +252,11 @@ function LuckySpinView() {
   const saveEdit = async (t: BonusTask) => {
     setEditSaving(true);
     const amount = parseFloat(editValue.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')) || 0;
+    const nextStatus: BonusTask['status'] = amount > 0 ? 'complete' : 'pending';
     await update(t.id, {
       inject_bonus: amount,
-      status: amount > 0 ? 'complete' : 'pending',
+      status: nextStatus,
+      completed_at: nextStatus === 'complete' ? (t.completed_at ?? new Date().toISOString()) : null,
       edited_at: new Date().toISOString(),
       edited_by: user?.email ?? 'admin',
     });
@@ -274,7 +275,7 @@ function LuckySpinView() {
   const { from, to } = useMemo(() => getPeriodRange(period), [period]);
   const completed = useMemo(() =>
     data.filter((d) => {
-      const dt = new Date(d.created_at);
+      const dt = new Date(d.completed_at ?? d.created_at);
       return d.status === 'complete' && dt >= from && dt <= to &&
         (d.user_name.toLowerCase().includes(search.toLowerCase()) || d.ticket.toLowerCase().includes(search.toLowerCase()));
     }),
@@ -410,7 +411,7 @@ function LuckySpinView() {
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-white/5">
                 {paginated.map((t) => {
-                  const dt = new Date(t.created_at);
+                  const dt = new Date(t.completed_at ?? t.created_at);
                   const isEditing = editingId === t.id;
                   return (
                     <tr key={t.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02]">
@@ -442,13 +443,6 @@ function LuckySpinView() {
                         <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
                           <CheckCircle2 size={11} />Complete
                         </span>
-                      </td>
-                      <td className={tdCls}>
-                        {t.edited_at && (
-                          <p className="text-[10px] text-slate-400 dark:text-slate-600 whitespace-nowrap">
-                            Edit: {new Date(t.edited_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} oleh {t.edited_by}
-                          </p>
-                        )}
                       </td>
                       <td className={tdCls}>
                         <div className="flex items-center gap-1">
@@ -721,13 +715,7 @@ function parseTurnoverPaste(raw: string): GtLocalRow[] {
   }
 
   // ── Fallback: single-line concatenated ────────────────────────────────────
-  // Format: username (letters+digits, starts with letter) + turnover (1-3 digits then ,ddd groups)
-  //         + optional prize (digits with dots as thousand separators, e.g. 250.000)
-  //
-  // Prize pattern: digit groups separated by dots, immediately after turnover, before next username
-  // e.g. lucky776107,623,850250.000g0c0107,356,380500.000
   const text = raw.replace(/\s+/g, '');
-  // Regex: username | turnover (comma-separated) | optional prize (dot-separated integer)
   const regex = /([a-zA-Z][a-zA-Z0-9]*?)(\d{1,3}(?:,\d{3})+)((?:\d{1,3}(?:\.\d{3})+)?)/g;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(text)) !== null) {
@@ -751,17 +739,14 @@ function periodeLabel(key: string) {
 function GebyarTurnoverView() {
   const { data, loading, add, remove } = useBonusTasks('gebyar-turnover');
 
-  // batches = array of { batchId, bulan, tahun, rows[] } — persisted to localStorage
   const [batches, setBatches] = useState<GtBatch[]>([]);
   const [pasteText, setPasteText] = useState('');
   const [showPaste, setShowPaste] = useState(false);
 
-  // Paste periode picker — default to current month/year
   const now = new Date();
   const [pasteBulan, setPasteBulan] = useState(now.getMonth() + 1);
   const [pasteTahun, setPasteTahun] = useState(now.getFullYear());
 
-  // Filter for right table
   const [filterPeriode, setFilterPeriode] = useState<string>('all');
 
   const STORAGE_KEY = 'gt-batches-v2';
@@ -819,7 +804,6 @@ function GebyarTurnoverView() {
     if (!err) deleteRow(batch.batchId, tempId);
   };
 
-  // All left-side totals (across all batches)
   const allLeftRows = batches.flatMap((b) => b.rows);
   const totalMemberLeft = allLeftRows.filter((r) => r.user_name.trim()).length;
   const totalPendingBonus = allLeftRows.reduce((sum, r) => {
@@ -827,7 +811,6 @@ function GebyarTurnoverView() {
     return isNaN(n) ? sum : sum + n;
   }, 0);
 
-  // Right table — optionally filtered by periode
   const claimed = filterPeriode === 'all' ? data : data.filter((d) => d.periode === filterPeriode);
   const allPeriodes = [...new Set(data.map((d) => d.periode).filter(Boolean) as string[])].sort().reverse();
 
@@ -856,10 +839,8 @@ function GebyarTurnoverView() {
           </button>
         </div>
 
-        {/* Paste area + periode picker */}
         {showPaste && (
           <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 space-y-3 bg-slate-50 dark:bg-white/[0.02]">
-            {/* Periode picker */}
             <div className="flex items-center gap-2">
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">Periode:</p>
               <select
@@ -927,7 +908,6 @@ function GebyarTurnoverView() {
               const pk = periodeKey(batch);
               return (
                 <div key={batch.batchId}>
-                  {/* Periode header */}
                   <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/5 sticky top-0 z-10">
                     <div className="flex items-center gap-2">
                       <Calendar size={13} className="text-blue-500 dark:text-blue-400" />
@@ -995,7 +975,6 @@ function GebyarTurnoverView() {
 
       {/* ── RIGHT TABLE ── */}
       <div className="bg-white dark:bg-[#0d1b2e] border border-slate-200 dark:border-white/5 rounded-xl overflow-hidden flex flex-col">
-        {/* Header + filter */}
         <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 flex items-center justify-between gap-3">
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Data Claim</p>
           {allPeriodes.length > 0 && (
@@ -1009,7 +988,6 @@ function GebyarTurnoverView() {
             </select>
           )}
         </div>
-        {/* Right totals */}
         <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 flex flex-wrap gap-3">
           <div className="flex-1 min-w-[140px] rounded-lg bg-blue-50 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 px-3 py-2">
             <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Total Claim Member</p>
