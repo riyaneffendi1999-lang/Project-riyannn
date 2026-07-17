@@ -291,10 +291,10 @@ export default function Dashboard() {
                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" className="dark:opacity-100" />
             <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip />} wrapperStyle={{ background: 'transparent', border: 'none', outline: 'none' }} />
             <Area type="monotone" dataKey="Transaksi" stroke="#3b82f6" strokeWidth={2} fill="url(#txGrad)" dot={{ fill: '#3b82f6', r: 3 }} />
           </AreaChart>
         </ResponsiveContainer>
@@ -313,8 +313,8 @@ export default function Dashboard() {
                 <Pie data={methodData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={40} paddingAngle={2}>
                   {methodData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: '#94a3b8' }} />
+                <Tooltip content={<CustomTooltip />} wrapperStyle={{ background: 'transparent', border: 'none', outline: 'none' }} />
+                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, color: '#94a3b8', background: 'transparent' }} />
               </PieChart>
             </ResponsiveContainer>
           )}
@@ -331,7 +331,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
                 <XAxis dataKey="method" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}jt`} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip />} wrapperStyle={{ background: 'transparent', border: 'none', outline: 'none' }} />
                 <Bar dataKey="total" name="Total" radius={[4, 4, 0, 0]}>
                   {barData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                 </Bar>
@@ -418,8 +418,8 @@ export default function Dashboard() {
                     <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}jt`} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, color: '#94a3b8' }} />
+                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ background: 'transparent', border: 'none', outline: 'none' }} />
+                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 10, color: '#94a3b8', background: 'transparent' }} />
                     <Bar yAxisId="left" dataKey="Member" radius={[4, 4, 0, 0]} fill="#3b82f6" opacity={0.85}>
                       {bonusBarData.map((entry) => (
                         <Cell key={entry.program} fill={BONUS_COLORS[entry.program]} />
