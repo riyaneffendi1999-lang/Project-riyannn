@@ -11,10 +11,6 @@ export function useBonusTasks(program: BonusTaskProgram) {
   const [data, setData] = useState<BonusTask[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Guard against the realtime echo racing with — and overwriting — the local
-  // cache mutation we already applied optimistically. While a local mutation is
-  // pending for a given id, we defer realtime-driven reloads so the canonical
-  // fetch can't clobber the in-flight update with a stale snapshot.
   const pendingMutations = useRef<Set<string>>(new Set());
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,9 +30,6 @@ export function useBonusTasks(program: BonusTaskProgram) {
     const channel = supabase
       .channel(`bonus_tasks_${program}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bonus_tasks', filter: `program=eq.${program}` }, (payload) => {
-        // If this echo corresponds to a mutation we just applied locally,
-        // ignore it — our cache already reflects the change and a reload could
-        // race with the DB commit. Clear the guard shortly after.
         const row = (payload as { new?: { id?: string }; old?: { id?: string } });
         const id = row.new?.id ?? row.old?.id;
         if (id && pendingMutations.current.has(id)) {
@@ -72,8 +65,6 @@ export function useBonusTasks(program: BonusTaskProgram) {
     return null;
   };
 
-  // Updates Supabase AND the local cache atomically. Returns the canonical
-  // updated row so callers can use it without waiting for realtime.
   const update = async (id: string, payload: Database['public']['Tables']['bonus_tasks']['Update']): Promise<{ error: string | null; row: BonusTask | null }> => {
     const { data: row, error } = await supabase
       .from('bonus_tasks')

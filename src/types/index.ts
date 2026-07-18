@@ -6,7 +6,6 @@ export type UserStatus = 'active' | 'inactive';
 export type BankType = 'Bank Transfer' | 'E-Money' | 'Pulsa';
 export type BankStatus = 'active' | 'inactive';
 
-// ─── Admin Role System ───────────────────────────────────────────────────────
 export type AdminRole = 'head' | 'supervisor' | 'ast-spv' | 'staff';
 
 export const ADMIN_ROLES: AdminRole[] = ['head', 'supervisor', 'ast-spv', 'staff'];
@@ -25,7 +24,6 @@ export const ADMIN_ROLE_STYLES: Record<AdminRole, string> = {
   staff: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
 };
 
-/** Hierarchy rank: higher number = more authority */
 export const ROLE_RANK: Record<AdminRole, number> = {
   head: 4,
   supervisor: 3,
